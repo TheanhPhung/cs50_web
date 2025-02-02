@@ -1,3 +1,8 @@
+#navbar {
+	padding: 5px;
+}
+
+
 ul {
 	list-style-type: none;
 }
@@ -53,8 +58,12 @@ a img {
 
 
 #images-search {
-	/*background-color: orange;*/
 	background-image: url("Google_2015_logo.svg.png");
 	background-repeat: no-repeat;
 	background-size: 300px 100px;
+}
+
+
+.advanced-input {
+	width: 100%;
 }
