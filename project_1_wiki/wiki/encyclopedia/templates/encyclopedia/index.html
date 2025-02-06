@@ -5,12 +5,19 @@
 {% endblock %}
 
 {% block body %}
-    <h1>All Pages</h1>
+    {% for message in messages %}
+        <h1>{{ message }}</h1>
+    {% endfor %}
 
-    <ul>
-        {% for entry in entries %}
-        <li><a href="{% url 'detail' entry %}">{{ entry }}</a></li>
-        {% endfor %}
-    </ul>
+    {% if not messages %}
+        <h1>All Pages</h1>
+
+        <ul>
+            
+                {% for entry in entries %}
+                <li><a href="{% url 'detail' entry %}">{{ entry }}</a></li>
+                {% endfor %}
+        </ul>
+    {% endif %}
 
 {% endblock %}

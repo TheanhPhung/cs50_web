@@ -5,5 +5,12 @@
 {% endblock %}
 
 {% block body %}
+   {% for message in messages %}
+      <h1>{{ message }}</h1>
+   {% endfor %}
+
    {{ content|safe }}
+   <form action="{% url 'edit' title %}" method="get">
+      <input class="btn btn-warning" type="submit" value="Edit this page">
+   </form>
 {% endblock %}
