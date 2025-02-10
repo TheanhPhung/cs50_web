@@ -3,7 +3,8 @@ from django.db import models
 
 
 class User(AbstractUser):
-    pass
+    def __str__(self):
+        return self.username
 
 
 class Category(models.Model):
@@ -22,6 +23,7 @@ class Listing(models.Model):
     image_url = models.URLField()
     category = models.ForeignKey(Category, on_delete=models.PROTECT, blank=True, null=True, related_name="listings_by_category")
     is_active = models.BooleanField(default=True)
+    interested_by = models.ManyToManyField(User, related_name="watchlist")
 
     def __str__(self):
         return self.title

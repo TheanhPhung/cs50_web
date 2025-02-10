@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
@@ -66,6 +67,31 @@ def register(request):
         return render(request, "auctions/register.html")
 
 
+def listing(request, listing_id):
+    listing = Listing.objects.get(pk=listing_id)
+    watchlist_check = (listing in request.user.watchlist.all())
+    count_bids = Bid.objects.filter(bid_for=listing).count()
+
+    #TODO
+    #Add listing method for anonymous user
+
+    return render(request, "auctions/listing.html", {
+        "listing": listing,
+        "watchlist_check": watchlist_check,
+        "count_bids": count_bids
+    })
+
+
+@login_required
+def watchlist(request):
+    listings = request.user.watchlist.all()
+    return render(request, "auctions/index.html", {
+        "listings": listings,
+        "header": "Watchlist"
+    })
+
+
+@login_required
 def create_listing(request):
     if request.method == "POST":
         title = request.POST["title"]
@@ -91,3 +117,19 @@ def create_listing(request):
         return render(request, "auctions/create_listing.html", {
             "category_list": Category.objects.all()
         })
+
+
+@login_required
+def edit_watchlist(request, listing_id):
+    listing = Listing.objects.get(pk=listing_id)
+    if listing in request.user.watchlist.all():
+        request.user.watchlist.remove(listing)
+    else:
+        request.user.watchlist.add(listing)
+
+    return HttpResponseRedirect(reverse("watchlist"))
+
+
+@login_required
+def place_bid(request, listing_id):
+    pass

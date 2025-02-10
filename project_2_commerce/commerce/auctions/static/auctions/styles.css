@@ -12,5 +12,18 @@ body {
 
 .card-img {
     object-fit: contain;
-    max-height: 200px
+    max-height: 200px;
+}
+
+.listing-img {
+    max-height: 200px;
+}
+
+.owner-link {
+    text-decoration: none;
+}
+
+.listing-link {
+    text-decoration: none;
+    color: black;
 }

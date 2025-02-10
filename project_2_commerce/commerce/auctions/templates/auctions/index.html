@@ -3,7 +3,11 @@
 {% load static %}
 
 {% block body %}
-    <h2>Active Listings</h2>
+    {% if header %}
+        <h2>{{ request.user.username }}'s {{ header }}</h2>
+    {% else %}
+        <h2>Active Listings</h2>
+    {% endif %}
 
     {% for listing in listings %}
     <div class="card mt-3">
@@ -16,12 +20,17 @@
                 {% endif %}
             </div>
             <div class="col-sm-9 mt-2 mb-2 d-flex flex-column justify-content-center">
-                <h4 class="flex-item">{{ listing.title }}</h4>
-                <h5 class="flex-item"><strong>Price: </strong>${{ listing.current_price|floatformat:2 }}</h5>
-                <h5 class="flex-item">{{ listing.description }}</h5>
-                <p class="flex-item" style="color: grey;">Created {{ listing.created_at }}</p>
+                <a class="listing-link" href="{% url 'listing' listing.id %}">
+                    <h4 class="flex-item">
+                        <strong>{{ listing.title }}</strong>
+                    </h4>
+                    <h5 class="flex-item"><strong>Price: </strong>${{ listing.current_price|floatformat:2 }}</h5>
+                    <h5 class="flex-item">{{ listing.description }}</h5>
+                    <p class="flex-item" style="color: grey;">Created {{ listing.created_at }}</p>
+                </a>
             </div>
         </div>
+            </a>
     </div>
     {% endfor %}
 
