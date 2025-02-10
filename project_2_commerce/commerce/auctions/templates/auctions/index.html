@@ -1,7 +1,28 @@
 {% extends "auctions/layout.html" %}
 
+{% load static %}
+
 {% block body %}
     <h2>Active Listings</h2>
 
-    TODO
+    {% for listing in listings %}
+    <div class="card mt-3">
+        <div class="container-fluid row">
+            <div class="col-sm-3 mt-2 mb-2 text-center d-flex flex-column justify-content-center">
+                {% if listing.image_url %}
+                    <img class="flex-item card-img" src="{{ listing.image_url }}" alt="Image">
+                {% else %}
+                <img class="flex-item card-img" src="{% static 'auctions/no-image.png' %}" alt="No Image">
+                {% endif %}
+            </div>
+            <div class="col-sm-9 mt-2 mb-2 d-flex flex-column justify-content-center">
+                <h4 class="flex-item">{{ listing.title }}</h4>
+                <h5 class="flex-item"><strong>Price: </strong>${{ listing.current_price|floatformat:2 }}</h5>
+                <h5 class="flex-item">{{ listing.description }}</h5>
+                <p class="flex-item" style="color: grey;">Created {{ listing.created_at }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
 {% endblock %}
