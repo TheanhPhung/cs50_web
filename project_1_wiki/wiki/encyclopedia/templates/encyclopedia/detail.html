@@ -9,7 +9,9 @@
       <h1>{{ message }}</h1>
    {% endfor %}
 
+   <div>
    {{ content|safe }}
+   </div>
    <form action="{% url 'edit' title %}" method="get">
       <input class="btn btn-warning" type="submit" value="Edit this page">
    </form>

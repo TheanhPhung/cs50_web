@@ -5,6 +5,9 @@ Just a normal test
 Add some text
 
 ### Third Heading
+* First Item
+* Second Item
+* This is an another item
 
 ###### h6 Heading.
 

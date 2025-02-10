@@ -1,4 +1,4 @@
-import markdown2
+# import markdown2
 from random import choice
 
 from django.shortcuts import render, redirect
@@ -22,8 +22,8 @@ def index(request):
 def detail(request, title):
     if util.get_title(title):
         title = util.get_title(title)
-        content = markdown2.Markdown().convert(util.get_entry(title))
-        # content = convert.convert(title)
+        # content = markdown2.Markdown().convert(util.get_entry(title))
+        content = convert.convert(title)
 
         return render(request, "encyclopedia/detail.html", {
             "title": title,
