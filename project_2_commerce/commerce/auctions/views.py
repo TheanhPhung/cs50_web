@@ -1,11 +1,23 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 
+from django.views.generic import ListView
+
 from .models import User, Category, Listing, Bid, Comment
+
+
+class ListingListView(ListView):
+    model = Listing
+
+    def get_content_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["listing"] = Listing.objects.filter(is_active=True)
+        return context
 
 
 def index(request):
@@ -69,11 +81,13 @@ def register(request):
 
 def listing(request, listing_id):
     listing = Listing.objects.get(pk=listing_id)
-    watchlist_check = (listing in request.user.watchlist.all())
-    count_bids = Bid.objects.filter(bid_for=listing).count()
 
-    #TODO
-    #Add listing method for anonymous user
+    if request.user.is_authenticated:
+        watchlist_check = (listing in request.user.watchlist.all())
+    else:
+        watchlist_check = False
+
+    count_bids = Bid.objects.filter(bid_for=listing).count()
 
     return render(request, "auctions/listing.html", {
         "listing": listing,
@@ -82,13 +96,17 @@ def listing(request, listing_id):
     })
 
 
-@login_required
 def watchlist(request):
-    listings = request.user.watchlist.all()
-    return render(request, "auctions/index.html", {
-        "listings": listings,
-        "header": "Watchlist"
-    })
+    if request.user.is_authenticated:
+        listings = request.user.watchlist.all()
+
+        return render(request, "auctions/index.html", {
+            "listings": listings,
+            "header": "Watchlist"
+        })
+
+    messages.error(request, "You must be logged in to performed this function.")
+    return HttpResponseRedirect(reverse("login"))
 
 
 @login_required
@@ -119,17 +137,24 @@ def create_listing(request):
         })
 
 
-@login_required
 def edit_watchlist(request, listing_id):
-    listing = Listing.objects.get(pk=listing_id)
-    if listing in request.user.watchlist.all():
-        request.user.watchlist.remove(listing)
-    else:
-        request.user.watchlist.add(listing)
+    if request.user.is_authenticated:
+        listing = Listing.objects.get(pk=listing_id)
+        if listing in request.user.watchlist.all():
+            request.user.watchlist.remove(listing)
+        else:
+            request.user.watchlist.add(listing)
 
-    return HttpResponseRedirect(reverse("watchlist"))
+        return HttpResponseRedirect(reverse("watchlist"))
+
+    messages.error(request, "You must be logged in to performed this function.")
+    return HttpResponseRedirect(reverse("login"))
 
 
-@login_required
 def place_bid(request, listing_id):
-    pass
+    if request.user.is_authenticated:
+
+        pass
+
+    messages.error(request, "You must be logged in to performed this function.")
+    return HttpResponseRedirect(reverse("login"))
