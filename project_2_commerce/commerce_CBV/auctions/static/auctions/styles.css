@@ -1,0 +1,52 @@
+body {
+    padding: 10px;
+}
+
+.card-index {
+    max-width: 80%;
+}
+
+.card-index:hover {
+    background-color: lightgrey;
+}
+
+.card-img {
+    object-fit: contain;
+    max-height: 200px;
+}
+
+.listing-img {
+    max-height: 200px;
+}
+
+.owner-link {
+    text-decoration: none;
+}
+
+.listing-link {
+    text-decoration: none;
+    color: black;
+}
+
+.comment-span {
+    color: grey;
+}
+
+.user-comment {
+    color: grey;
+    text-decoration: none;
+}
+
+.user-comment:hover {
+    color: black;
+    font-weight: bold;
+}
+
+#listing {
+    max-width: 800px;
+}
+
+#close-tag {
+    text-decoration: underline;
+    color: grey;
+}
