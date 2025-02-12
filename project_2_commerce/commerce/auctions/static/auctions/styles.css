@@ -2,11 +2,11 @@ body {
     padding: 10px;
 }
 
-.card {
+.card-index {
     max-width: 80%;
 }
 
-.card:hover {
+.card-index:hover {
     background-color: lightgrey;
 }
 
@@ -26,4 +26,27 @@ body {
 .listing-link {
     text-decoration: none;
     color: black;
+}
+
+.comment-span {
+    color: grey;
+}
+
+.user-comment {
+    color: grey;
+    text-decoration: none;
+}
+
+.user-comment:hover {
+    color: black;
+    font-weight: bold;
+}
+
+#listing {
+    max-width: 800px;
+}
+
+#close-tag {
+    text-decoration: underline;
+    color: grey;
 }
