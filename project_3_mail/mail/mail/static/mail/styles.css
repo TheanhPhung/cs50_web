@@ -47,4 +47,41 @@ textarea {
 
 .timestamp {
     text-align: right;
+    color: grey;
+}
+
+.mail-detail:hover {
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.mail-detail > div:hover {
+    background-color: darkgrey;
+}
+
+@keyframes hide-email {
+    0% {
+        opacity: 1;
+        height: 100%;
+        line-height: 100%;
+      }
+
+    75% {
+        opacity: 0;
+        height: 100%;
+        line-height: 100%;
+    }
+
+    100% {
+        opacity: 0;
+        height: 0%;
+        line-height: 0%;
+    }
+}
+
+.mail-detail {
+    animation-name: hide-email;
+    animation-duration: 2s;
+    animation-fill-mode: forwards;
+    animation-play-state: paused;
 }
