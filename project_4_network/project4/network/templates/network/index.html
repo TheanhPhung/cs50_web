@@ -1,0 +1,23 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+    TODO
+    <div id="app"></div>
+
+    <script type="text/babel">
+        function App() {
+            return (
+                <div>
+                    Hello from React!
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.querySelector("#app"));
+        root.render(
+            <React.StrictMode>
+                <App />
+            </React.StrictMode>
+        );
+    </script>
+{% endblock %}
