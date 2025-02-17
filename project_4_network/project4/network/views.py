@@ -4,11 +4,31 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 
-from .models import User
+from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+
+from .models import User, Post
+from .serializers import PostSerializer, UserSerializer
 
 
 def index(request):
     return render(request, "network/index.html")
+
+
+class PostList(generics.ListCreateAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+
+
+class UserList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
 
 def login_view(request):
@@ -61,3 +81,8 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "network/register.html")
+
+
+@api_view(["GET"])
+def me(request):
+    return Response({"id": request.user.id, "username": request.user.username})

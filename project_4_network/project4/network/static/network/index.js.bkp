@@ -1,0 +1,127 @@
+function NewPost() {
+
+    async function getOwnerId() {
+        const response = await fetch("/me/");
+        const me = await response.json();
+        return me.id;
+    }
+
+    async function buttonClick(event) {
+
+        event.preventDefault();
+
+        function getCSRFToken() {
+            return document.cookie.split("=")[1];
+        }
+
+        const content = document.querySelector("#content").value;
+        const ownerId = await getOwnerId();
+        console.log(content);
+
+        fetch("/posts/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken(),
+            },
+            body: JSON.stringify({
+                owner: ownerId,
+                content: content
+            })
+        })
+    }
+
+    return (
+        <div className="card">
+            <div className="container-fluid">
+                <form className="form-group">
+                    <label className="form-label mt-2" htmlFor="new_post"><h4>New Post</h4></label>
+                    <textarea className="form-control" id="content" type="textarea" name="new_post" rows="3"></textarea>
+                    <button className="btn btn-primary mt-2 mb-2" onClick={buttonClick}>Post</button>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+function ViewPosts(newpost) {
+
+    const [posts, setPosts] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
+
+    if (newpost) {
+        setLoading(true);
+    } else {
+        setLoading(false);
+    }
+
+    //React.useEffect(() => {
+        //fetch("/posts/")
+        //.then(response => response.json())
+        //.then(data => {
+            //console.log(data);
+            //setPosts(data);
+        //})
+    //}, []);
+    
+    if (loading === true) {
+        fetch("/posts/")
+        .then(response => response.json())
+        .then(data => {
+            setLoading(false);
+            setPosts(data);
+        });
+    }
+
+    function GetUserName({ owner }){
+        const [username, setUsername] = React.useState("");
+
+        React.useEffect(() => {
+            fetch(`/users/${owner}/`)
+            .then(response => response.json())
+            .then(user => {
+                console.log(user.username);
+                setUsername(user.username);
+            })
+        }, []);
+
+        return <div>{ username }</div>
+    }
+
+    const listPost = posts.map(post => {
+        return (
+            <div key={ post.id }>
+                <div className="container-fluid card mt-3">
+                    <h5 className="mt-2"><strong><GetUserName owner={post.owner} /></strong></h5>
+                    <a href="#">Edit</a>
+                    <p>{ post.content }</p>
+                    <p>{ post.created_at }</p>
+                </div>
+                <hr></hr>
+            </div>
+        )
+    });
+
+
+    return (
+        <div>
+            { listPost }
+        </div>
+    )
+}
+
+function App() {
+    return (
+        <div>
+            <NewPost />
+            <ViewPosts />
+        </div>
+    );
+}
+
+const root = ReactDOM.createRoot(document.querySelector("#root"));
+root.render(
+    <React.StrictMode>
+        <App />
+    </React.StrictMode>
+);
