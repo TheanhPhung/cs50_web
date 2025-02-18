@@ -12,4 +12,7 @@ urlpatterns = [
     path("posts/", views.PostList.as_view(), name="posts-list"),
     path("users/", views.UserList.as_view(), name="users-list"),
     path("users/<int:pk>/", views.UserDetail.as_view(), name="user-detail"),
+    path("likes/", views.LikeList.as_view(), name="likes-list"),
+    path("likes/<int:pk>/", views.LikeDetail.as_view(), name="like-detail"),
+    path("get-like/user=<int:user_id>/post=<int:post_id>/", views.get_like_id, name="get-like"),
 ]

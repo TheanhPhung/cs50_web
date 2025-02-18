@@ -8,8 +8,8 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-from .models import User, Post
-from .serializers import PostSerializer, UserSerializer
+from .models import User, Post, Like, Comment
+from .serializers import PostSerializer, UserSerializer, LikeSerializer, CommentSerializer
 
 
 def index(request):
@@ -29,6 +29,16 @@ class UserList(generics.ListAPIView):
 class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+
+class LikeList(generics.ListCreateAPIView):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+
+
+class LikeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
 
 
 def login_view(request):
@@ -86,3 +96,11 @@ def register(request):
 @api_view(["GET"])
 def me(request):
     return Response({"id": request.user.id, "username": request.user.username})
+
+
+@api_view(["GET"])
+def get_like_id(request, user_id, post_id):
+    user = User.objects.get(pk=user_id)
+    post = Post.objects.get(pk=post_id)
+    like = Like.objects.get(liker=user, post=post)
+    return Response({"id": like.id})
