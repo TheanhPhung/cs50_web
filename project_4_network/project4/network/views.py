@@ -8,8 +8,8 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
-from .models import User, Post, Like, Comment
-from .serializers import PostSerializer, UserSerializer, LikeSerializer, CommentSerializer
+from .models import *
+from .serializers import *
 
 
 def index(request):
@@ -17,8 +17,34 @@ def index(request):
 
 
 class PostList(generics.ListCreateAPIView):
+    serializer_class = PostSerializer
+
+    def get_queryset(self, *args, **kwargs):
+        if (self.kwargs.get("user_id")):
+            user_id = self.kwargs.get("user_id")
+            user = User.objects.get(pk=user_id)
+            return Post.objects.filter(owner=user)
+        else:
+            return Post.objects.all()
+
+
+class PostDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+
+
+class EditedPostList(generics.ListCreateAPIView):
+    queryset = EditedPost.objects.all()
+    serializer_class = EditedPostSerializer
+
+
+class EditedPostCustomList(generics.ListCreateAPIView):
+    serializer_class = EditedPostSerializer
+
+    def get_queryset(self):
+        post_id = self.kwargs.get("post_id")
+        post = Post.objects.get(pk=post_id)
+        return post.edited_posts.last()
 
 
 class UserList(generics.ListAPIView):
@@ -39,6 +65,15 @@ class LikeList(generics.ListCreateAPIView):
 class LikeDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+
+
+class CommentList(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        post_id = self.kwargs.get("post_id")
+        post = Post.objects.get(pk=post_id)
+        return Comment.objects.filter(post=post)
 
 
 def login_view(request):

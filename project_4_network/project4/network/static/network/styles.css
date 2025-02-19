@@ -48,7 +48,7 @@
 	margin-bottom: 10px;
 }
 
-.newest-post {
+.post {
 	animation-name: show-element;
 	animation-duration: 5s;
 	animation-fill-mode: forwards;
@@ -60,4 +60,13 @@
 .post:hover {
 	background: lightgrey;
 	cursor: pointer;
+}
+
+.comment-card {
+	animation-name: show-element;
+	animation-duration: 2s;
+	animation-fill-mode: forwards;
+	animation-iteration-count: 0.5;
+	padding: 20px;
+	margin-bottom; 10px;
 }

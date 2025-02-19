@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from django.utils import timezone
+
 
 class User(AbstractUser):
     follow = models.ManyToManyField('self', symmetrical=False, related_name="followers")
@@ -30,14 +32,23 @@ class Post(models.Model):
     def comment_count(self):
         return self.comments.count()
 
-    def last_content(self):
-        return self.edited_posts.last().new_content
+    def edited_content(self):
+        if self.edited_posts.last():
+            edited_post = self.edited_posts.last()
+            return edited_post.new_content
+        return None
+
+    def updated_at(self):
+        if self.edited_posts.last():
+            edited_post = self.edited_posts.last()
+            return edited_post.updated_at
+        return None
 
 
 class EditedPost(models.Model):
-    original = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="edited_posts")
+    origin = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="edited_posts")
     new_content = models.TextField()
-    edited_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
 
 
 class Like(models.Model):
@@ -49,4 +60,11 @@ class Like(models.Model):
 class Comment(models.Model):
     commenter = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
+    content = models.TextField()
     commented_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-commented_at"]
+
+    def commenter_name(self):
+        return self.commenter.username

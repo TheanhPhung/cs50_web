@@ -3,6 +3,7 @@ function App() {
 	const [updated, setUpdated] = React.useState(false);
 	const [inputContent, setInputContent] = React.useState("");
 	const [isEditing, setIsEditing] = React.useState(false);
+	const [postId, setPostId] = React.useState(null);
 
 	React.useEffect(() => {
 		fetch("/posts/")
@@ -24,8 +25,22 @@ function App() {
 	return (
 		<div>
 			<AlertSuccess showAlert={showAlert} />
-			<NewPostForm posts={posts} setPosts={setPosts} setUpdated={setUpdated} setShowAlert={setShowAlert} isEditing={isEditing} setIsEditing={setIsEditing} />
-			<ViewPosts posts={ posts } setIsEditing={setIsEditing} />
+			<NewPostForm 
+				posts={posts} 
+				setPosts={setPosts} 
+				setUpdated={setUpdated} 
+				setShowAlert={setShowAlert} 
+				isEditing={isEditing} 
+				setIsEditing={setIsEditing} 
+				postId={postId}
+			/>
+			<ViewPosts 
+				posts={ posts } 
+				setPosts = {setPosts}
+				setIsEditing={setIsEditing} 
+				setUpdated={setUpdated}
+				setPostId={setPostId}
+			/>
 		</div>
 	)
 }
@@ -44,7 +59,7 @@ function AlertSuccess({ showAlert }) {
 	) : null;
 }
 
-function NewPostForm({ posts, setPosts, setUpdated, setShowAlert, isEditing, setIsEditing }) {
+function NewPostForm({ posts, setPosts, setUpdated, setShowAlert, isEditing, setIsEditing, postId }) {
 
 	async function handleFormSubmit(event) {
 		event.preventDefault();
@@ -53,32 +68,58 @@ function NewPostForm({ posts, setPosts, setUpdated, setShowAlert, isEditing, set
 		const userId = await getUserId();
 
 		if (isEditing) {
-			console.log("Just edit, not update!");
-			setIsEditing(false);
-		}
-
-		const response =  await fetch("/posts/", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"X-CSRFToken": document.cookie.split("=")[1]
-			},
-			body: JSON.stringify({
-				owner: userId,
-				content: content
+			fetch("/editpost/", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-CSRFToken": document.cookie.split("=")[1]
+				}, 
+				body: JSON.stringify({
+					origin: postId,
+					new_content: content,
+				})
 			})
-		})
 
-		const newPost = await response.json();
-		console.log("New post: ", newPost);
+			const response = await fetch(`/posts/${postId}/`);
+			const editedPost = await response.json();
 
-		setPosts([...posts, newPost]);
-		console.log(posts);
+			setPosts(prevPosts => [
+				editedPost,
+				...prevPosts.filter(post => post.id !== postId)
+			]);
 
-		setUpdated(false);
-		event.target.elements.content.value = "";
+			setUpdated(false);
+			event.target.elements.content.value = "";
 
-		setShowAlert(true);
+			setIsEditing(false);
+
+			const editedElement = document.getElementById(`${postId}`);
+			setTimeout(() => editedElement.scrollIntoView(), 1500);
+			
+		} else {
+			const response =  await fetch("/posts/", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-CSRFToken": document.cookie.split("=")[1]
+				},
+				body: JSON.stringify({
+					owner: userId,
+					content: content
+				})
+			})
+
+			const newPost = await response.json();
+			console.log("New post: ", newPost);
+
+			setPosts([...posts, newPost]);
+			console.log(posts);
+
+			setUpdated(false);
+			event.target.elements.content.value = "";
+
+			setShowAlert(true);
+		}
 	}
 
 	return (
@@ -86,7 +127,7 @@ function NewPostForm({ posts, setPosts, setUpdated, setShowAlert, isEditing, set
 			<div className="container-fluid card p-3 m-2">
 				<form className="form-group" onSubmit={handleFormSubmit}>
 					<label className="form-label" forhtml="content">New Post</label>
-					<textarea className="form-control" id="content" name="content" rows="3"></textarea>
+					<textarea className="form-control" id="content" name="content" rows="3" required></textarea>
 					<button className="btn btn-primary mt-2" type="submit">Post</button>
 				</form>
 			</div>
@@ -95,12 +136,15 @@ function NewPostForm({ posts, setPosts, setUpdated, setShowAlert, isEditing, set
 	)
 }
 
-function Post({ post, posts, setIsEditing }) {
+function Post({ post, posts, setPosts, setIsEditing, setPostId, setUpdated }) {
 	const [likeCount, setLikeCount] = React.useState(post.like_count);
 	const [likeButtonName, setLikeButtonName] = React.useState("Like");
 	const [likeButtonClassName, setLikeButtonClassName] = React.useState("btn btn-secondary me-3");
 	const [likeIconClassName, setLikeIconClassName] = React.useState("fa fa-thumbs-up");
 	const [isOwner, setIsOwner] = React.useState(false);
+	const [comments, setComments] = React.useState([]);
+	const [commentCount, setCommentCount] = React.useState(post.comment_count);
+	const [showComment, setShowComment] = React.useState(false);
 
 	React.useEffect(() => {
 		async function updateButton() {
@@ -109,6 +153,7 @@ function Post({ post, posts, setIsEditing }) {
 			const data = await response.json();
 			const likedPostsList = await data.liked_posts;
 
+			// Update Like/Unlike button, Icon for button
 			if (likedPostsList.includes(post.id)) {
 				setLikeButtonName("Unlike");
 				setLikeButtonClassName("btn btn-primary me-3");
@@ -164,8 +209,51 @@ function Post({ post, posts, setIsEditing }) {
 		}
 	}
 
-	function handleComment() {
+	async function handleComment() {
 		console.log("Comment button is clicked for:", post.content);
+		if (!showComment) {
+			setShowComment(true);
+		} else {
+			setShowComment(false);
+		}
+	}
+
+	React.useEffect(() => {
+		if (!showComment) return;
+
+		async function fetchComments() {
+			const response = await fetch(`/comments/${post.id}/`);
+			const commentsList = await response.json();
+			setComments(commentsList);
+		}
+
+		if (showComment) {
+			fetchComments();
+		}
+	}, [showComment]);
+
+	async function sendComment(event) {
+		event.preventDefault();
+
+		const content = event.target.elements.comment.value;
+		const userId = await getUserId();
+		const response = await fetch(`/comments/${post.id}/`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-CSRFToken": document.cookie.split("=")[1]
+			},
+			body: JSON.stringify({
+				commenter: userId,
+				post: post.id,
+				content: content
+			}) 
+		});
+		const newComment = await response.json();
+		setComments([newComment, ...comments]);
+		setCommentCount(commentCount + 1);
+
+		event.target.elements.comment.value = "";
 	}
 
 	function handleEdit() {
@@ -175,12 +263,29 @@ function Post({ post, posts, setIsEditing }) {
 		inputContent.scrollIntoView();
 		inputContent.focus();
 		setIsEditing(true);
+		setPostId(post.id);
 	}
 
-	const isNewPost = (post.id == posts.length);
-	const postClassName = `container-fluid card p-3 m-2 post ${isNewPost ? "newest-post" : ""}`;
+	async function showProfile() {
+		console.log(`Profile for ${post.owner_name}`);
+		const owner = post.owner;
+		const userId = await getUserId();
+		setPosts(prevPosts => [
+			...prevPosts.filter(post => post.owner === owner)
+		]);
+		//setUpdated(true);
+	}
 
-	const d = new Date(post.created_at);
+	const postClassName = "container-fluid card p-3 m-2 post";
+
+	let d;
+
+	if (post.updated_at) {
+		d = new Date(post.updated_at);
+	} else {
+		d = new Date(post.created_at);
+	}
+
 	const formattedDate = d.toLocaleString("en-US", {
 		year: "numeric",
 		month: "long",
@@ -192,10 +297,10 @@ function Post({ post, posts, setIsEditing }) {
 	});
 
 	return (
-		<div className={postClassName}>
+		<div className={postClassName} id={post.id}>
 			<div className="card-header d-flex flex-row justify-content-between">
 				<div className="flex-item">
-					<h6><strong>{post.owner_name}</strong></h6>
+					<h6><strong><span onClick={showProfile}>{post.owner_name}</span></strong></h6>
 				</div>
 				{isOwner  && (
 				<div className="flex-item">
@@ -209,7 +314,7 @@ function Post({ post, posts, setIsEditing }) {
 			</div>
 
 			<div className="card-body">
-				<p>{ post.content }</p>
+				<p>{ post.edited_content ? post.edited_content : post.content }</p>
 			</div>
 
 			<div style={{ fontStyle: "italic", marginBottom: "10px" }}>
@@ -222,19 +327,43 @@ function Post({ post, posts, setIsEditing }) {
 						<button className={likeButtonClassName} onClick={handleLikeClick}><i className={likeIconClassName}></i> {likeButtonName}</button>
 					</div>
 					<div className="flex-item">
-						<button className="btn btn-secondary" onClick={handleComment}><i className="fa fa-comment"></i> {post.comment_count} Comment</button>
+						<button className="btn btn-secondary" onClick={handleComment}><i className="fa fa-comment"></i> {commentCount} Comment</button>
 					</div>
 				</div>
 				<div className="col-sm-4 d-flex flex-row justify-content-end">
-					<div className="flex-item" style={{ color: "grey", textAlign: "right" }}>{ formattedDate }</div>
+					<div className="flex-item" style={{ color: "grey", textAlign: "right" }}>{post.edited_content ? "Updated" : "Created"} at { formattedDate }</div>
 				</div>
 			</div>
+			{showComment && (
+				<div className="m-2">
+					<form onSubmit={sendComment}>
+						<textarea className="form-control mb-2" id="comment" name="comment"></textarea>
+						<button className="btn btn-primary" type="submit"><i className="fa fa-paper-plane"></i> Send</button>
+					</form>
+				</div>
+			)}
+			{showComment && (comments.map((comment) => (
+				<div className="card mb-2 p-3 comment-card" key={comment.id}>
+					<p><i><strong>{comment.commenter_name}</strong> said:</i> {comment.content}</p>
+					<p className="ms-5" style={{ color: "grey" }}><i>at {comment.commented_at}</i></p>
+				</div>
+			)))}
 		</div>
 	)
 }
 
-function ViewPosts({ posts, setIsEditing }) {
-	return posts.map(post => <Post post={ post } posts={ posts } setIsEditing={setIsEditing} key={ post.id }/>);
+function ViewPosts({ posts, setPosts, setIsEditing, setPostId, setUpdated }) {
+	return posts.map(post => 
+		<Post 
+			post={post}
+			posts={posts} 
+			setPosts={setPosts}
+			setPostId={setPostId}
+			setIsEditing={setIsEditing}
+			setUpdated={setUpdated}
+			key={ post.id }
+		/>
+	);
 }
 
 const root = ReactDOM.createRoot(document.querySelector("#root"));
