@@ -1,0 +1,15 @@
+@keyframes show-button{
+	from {opacity: 0}
+	to {opacity: 1}
+}
+
+.load-button {
+	animation-name: show-button;
+	animation-duration: 4s;
+	animation-fill-mode: forwards;
+}
+
+.owner-post:hover {
+	cursor: pointer;
+	font-size: 17px;
+}
