@@ -5,6 +5,9 @@ from django.db import models
 class User(AbstractUser):
     follow = models.ManyToManyField("self", symmetrical=False, related_name="followers")
 
+    def follower_count(self):
+        return self.followers.count()
+
 
 class Post(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")

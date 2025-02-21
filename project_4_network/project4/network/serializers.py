@@ -2,6 +2,18 @@ from rest_framework import serializers
 
 from .models import *
 
+
+class UserSerializer(serializers.ModelSerializer):
+    follower_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ["id", "username", "follow", "follower_count"]
+
+    def follower_count(self, obj):
+        return obj.follower_count()
+
+
 class PostSerializer(serializers.ModelSerializer):
     owner_name = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()

@@ -13,6 +13,26 @@ from .serializers import *
 from .paginations import CustomPagination
 
 
+class UserList(generics.ListCreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def get_queryset(self, *args, **kwargs):
+        filter_value = self.kwargs.get("filter")
+        if filter_value:
+            if filter_value == "followers":
+                user_id = self.kwargs.get("user_id")
+                user = User.objects.get(pk=user_id)
+                return user.followers.all()
+        else:
+            return User.objects.all()
+
+
+class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
 class PostList(generics.ListCreateAPIView):
     serializer_class = PostSerializer
     pagination_class = CustomPagination
@@ -22,6 +42,10 @@ class PostList(generics.ListCreateAPIView):
         if filter_value:
             if filter_value == "last":
                 return Post.objects.all()[:1]
+            elif filter_value == "profile":
+                user_id = self.kwargs.get("user_id")
+                user = User.objects.get(pk=user_id)
+                return Post.objects.filter(owner=user)
         else:
             return Post.objects.all()
 

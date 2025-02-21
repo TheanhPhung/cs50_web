@@ -1,10 +1,13 @@
 function App() {
+	const [title, setTitle] = React.useState("Network");
 	const [pageNumber, setPageNumber] = React.useState(1);
 	const [posts, setPosts] = React.useState([]);
 	const [isLastPage, setIsLastPage] = React.useState(false);
 	const [notifications, setNotifications] = React.useState(1);
 	const [isEditing, setIsEditing] = React.useState(false);
 	const [postId, setPostId] = React.useState(0);
+	const [showProfile, setShowProfile] = React.useState(false);
+	const [profileId, setProfileId] = React.useState(null);
 
 	React.useEffect(() => {
 		async function update() {
@@ -13,20 +16,46 @@ function App() {
 			setPosts(data.results);
 			setIsLastPage(data.count / pageNumber <= 10);
 		}
-		update();
-	}, [pageNumber, posts]);
+
+		async function updateProfile() {
+			const data = await getUserPosts(pageNumber, profileId);
+			if (arePostsEqual(posts, data.results)) return;
+			setPosts(data.results);
+			setIsLastPage(data.count / pageNumber <= 10);
+		}
+		if (!showProfile) {
+			update();
+		} else {
+			updateProfile();
+		}
+
+	}, [pageNumber, posts, profileId]);
 
 	return (
 		<div className="container">
-			<TitleBar notifications={notifications} />
+			<TitleBar 
+				title={title} 
+				notifications={notifications} 
+				showProfile={showProfile}
+				profileId={profileId}
+			/>
 			<NewPost 
 				posts={posts} 
 				setPosts={setPosts} 
 				isEditing={isEditing} 
 				setIsEditing={setIsEditing} 
 				postId={postId}
+				showProfile={showProfile}
 			/>
-			<ViewPosts posts={posts} setIsEditing={setIsEditing} setPostId={setPostId} />
+			<ViewPosts 
+				posts={posts} 
+				setIsEditing={setIsEditing} 
+				setPostId={setPostId} 
+				setShowProfile={setShowProfile}
+				setProfileId={setProfileId}
+				setPageNumber={setPageNumber}
+				setTitle={setTitle}
+			/>
 			<LoadPageButton 
 				pageNumber={pageNumber} 
 				setPageNumber={setPageNumber} 
@@ -48,16 +77,69 @@ async function getPosts(pageNumber) {
 	return data;
 }
 
+async function getUserPosts(pageNumber, profileId) {
+	const response = await fetch(`/posts/profile/${profileId}/`);
+	const data = await response.json();
+	return data;
+}
+
 async function getMe() {
 	const response = await fetch("/me/");
 	const result = await response.json()
-	return result.id
+	return result.id;
 }
 
-function ShowTitle() {
+async function getProfile(profileId) {
+	const response = await fetch(`/users/${profileId}/`);
+	const data = await response.json();
+	return data;
+}
+
+function ShowTitle({ title, showProfile, profileId }) {
+	const [followerCount, setFollowerCount] = React.useState(0);
+	const [isFollowed, setIsFollowed] = React.useState(false);
+	const [buttonName, setButtonName] = React.useState("Follow");
+
+	React.useState(() => {
+		async function updateTitle() {
+			if (!showProfile) return;
+			const myId = await getMe();
+			const user = await getProfile(myId);
+			const profile = await getProfile(profileId);
+			setFollowerCount(profile.follower_count);
+			const checkIsFollowed = user.follow.includes(profileId);
+			setIsFollowed(checkIsFollowed);
+			if (checkIsFollowed) {
+				setButtonName("Unfollow");
+			} 
+		}
+		updateTitle();
+		console.log(followerCount);
+	}, [profileId]);
+
+	function handleFollowClick() {
+		if (!isFollowed) {
+			setFollowerCount(followerCount + 1);
+			setButtonName("Unfollow");
+			setIsFollowed(true);
+		} else {
+			setFollowerCount(followerCount - 1);
+			setButtonName("Follow");
+			setIsFollowed(false);
+		}
+	}
+
 	return (
-		<div>
-			<span className="badge bg-light text-dark m-3"><h4 className="mt-2">All posts</h4></span>
+		<div id="title">
+			<span className="badge bg-dark text-light m-3 p-3">
+				<h4 className="mt-2">{title}</h4>
+				<div className="d-flex flex-row justify-content-end">
+					{showProfile ? (<span style={{ fontSize: "14px" }}>({followerCount} {followerCount <= 1 ? "follower" : "followers"})</span>) : null}
+				</div>
+			</span>
+			{showProfile ? (
+				<button className="btn btn-light m-3" onClick={handleFollowClick}>{buttonName} <i className="fa fa-plus"></i></button>
+			) : null}
 		</div>
 	)
 }
@@ -66,27 +148,30 @@ function Notification({notifications}) {
 	return (
 		<div>
 			<button className="btn btn-primary position-relative m-3">
-				Notification
+				Notification <i className="fa fa-bell"></i>
 				<span 
 					className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
 				>
 					{notifications > 0 ? notifications : null}
 				</span>
-
 			</button>
 		</div>
 	)
 }
 
-function TitleBar({notifications}) {
+function TitleBar({ title, notifications, showProfile, profileId }) {
 	return (
 		<div>
 			<div className="d-flex flex-row justify-content-between">
 				<div className="flex-item">
-					<ShowTitle />
+					<ShowTitle 
+						title={title} 
+						showProfile={showProfile} 
+						profileId={profileId} 
+					/>
 				</div>
 				<div className="flex-item">
-					<Notification notifications={notifications}/>
+					<Notification notifications={notifications} />
 				</div>
 			</div>
 			<hr />
@@ -94,7 +179,7 @@ function TitleBar({notifications}) {
 	)
 }
 
-function NewPost({posts, setPosts, isEditing, setIsEditing, postId}) {
+function NewPost({posts, setPosts, isEditing, setIsEditing, postId, showProfile}) {
 	async function handleFormSubmit(event) {
 		event.preventDefault();
 		console.log("Form is submited!");
@@ -149,7 +234,7 @@ function NewPost({posts, setPosts, isEditing, setIsEditing, postId}) {
 		setIsEditing(false);
 	}
 
-	return (
+	return (!showProfile ? (
 		<div>
 			<div className="container-fluid card p-3 m-2">
 				<form className="form-group" onSubmit={handleFormSubmit}>
@@ -163,10 +248,11 @@ function NewPost({posts, setPosts, isEditing, setIsEditing, postId}) {
 			</div>
 			<hr/>
 		</div>
-	)
+
+	) : null)
 }
 
-function ViewPost({ post, setIsEditing, setPostId }) {
+function ViewPost({ post, setIsEditing, setPostId, setShowProfile, setProfileId, setPageNumber, setTitle }) {
 	const [likeButtonClassName, setLikeButtonClassName] = React.useState("btn btn-secondary me-3 ms-3");
 	const [likeCount, setLikeCount] = React.useState(post.like_count);
 	const [commentCount, setCommentCount] = React.useState(post.comment_count);
@@ -269,6 +355,15 @@ function ViewPost({ post, setIsEditing, setPostId }) {
 		contentInput.focus();
 	}
 
+	function handleShowProfile() {
+		console.log("Show profile for ", post.owner_name);
+		setProfileId(post.owner);
+		setShowProfile(true);
+		setPageNumber(1);
+		setTitle(`${post.owner_name}'s Profile`);
+		document.querySelector("#title").scrollIntoView();
+	}
+
 	const d = new Date(lastUpdateTime);
 	const formatedDateTime = d.toLocaleString("en-US", {
 		year: "numeric",
@@ -279,16 +374,19 @@ function ViewPost({ post, setIsEditing, setPostId }) {
 		second: "2-digit",
 	});
 
-
 	return (
 		<div className="container-fluid card p-3 m-3 post" id={post.id}>
 			<div className="card-header">
 				<div className="d-flex flex-row justify-content-between">
 					<div className="flex-item">
-						<h6 className="mt-2"><strong><span className="text-secondary owner-post">{post.owner_name}</span></strong></h6>
+						<button className="btn btn-light" onClick={handleShowProfile}>{post.owner_name}</button>
 					</div>
 					<div className="flex-item">
-						{isOwnPost ? (<button className="btn btn-primary" onClick={handleEditClick}><i className="fa fa-edit"></i> Edit</button>) : null}
+						{isOwnPost ? (
+							<button className="btn btn-primary" onClick={handleEditClick}>
+								<i className="fa fa-edit"></i> Edit
+							</button>) : null
+						}
 					</div>
 				</div>
 			</div>
@@ -306,9 +404,18 @@ function ViewPost({ post, setIsEditing, setPostId }) {
 	)
 }
 
-function ViewPosts({ posts, setIsEditing, setPostId }) {
+function ViewPosts({ posts, setIsEditing, setPostId, setShowProfile, setProfileId, setPageNumber, setTitle }) {
 	return posts.map(post => 
-		<ViewPost post={post} setIsEditing={setIsEditing} setPostId={setPostId} key={post.id} />
+		<ViewPost 
+			post={post} 
+			setIsEditing={setIsEditing} 
+			setPostId={setPostId} 
+			setShowProfile={setShowProfile}
+			setProfileId={setProfileId}
+			setPageNumber={setPageNumber}
+			setTitle={setTitle}
+			key={post.id} 
+		/>
 	);
 }
 
