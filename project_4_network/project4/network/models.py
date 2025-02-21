@@ -24,6 +24,12 @@ class Post(models.Model):
         return self.comments.count()
 
 
+class EditedPost(models.Model):
+    origin = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="edited_posts")
+    new_content = models.TextField()
+    updated_at = models.DateTimeField(auto_now_add=True)
+
+
 class Comment(models.Model):
     commenter = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
@@ -32,7 +38,7 @@ class Comment(models.Model):
 
 
 class Like(models.Model):
-    liker = models.ForeignKey(User, on_delete=models.CASCADE)
+    liker = models.ForeignKey(User, on_delete=models.CASCADE, related_name="likes")
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="likes")
 
 

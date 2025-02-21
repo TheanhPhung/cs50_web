@@ -19,3 +19,15 @@ class PostSerializer(serializers.ModelSerializer):
 
     def comment_count(self, obj):
         return obj.comment_count()
+
+
+class EditedPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EditedPost
+        fields = "__all__"
+
+
+class LikeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Like
+        fields = "__all__"

@@ -1,4 +1,4 @@
-@keyframes show-button{
+@keyframes show-button {
 	from {opacity: 0}
 	to {opacity: 1}
 }
@@ -12,4 +12,24 @@
 .owner-post:hover {
 	cursor: pointer;
 	font-size: 17px;
+}
+
+@keyframes show-post {
+	from {
+		opacity: 0;
+		height: 0%;
+		line-height: 0%;
+	}
+
+	to {
+		opacity: 1;
+		height: 100%;
+		line-height: 100%;
+	}
+}
+
+.post {
+	animation-name: show-post;
+	animation-duration: 1s;
+	animation-fill-mode: forwards;
 }

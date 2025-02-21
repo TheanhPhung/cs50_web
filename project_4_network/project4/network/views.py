@@ -5,6 +5,8 @@ from django.shortcuts import render
 from django.urls import reverse
 
 from rest_framework import generics
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from .models import User
 from .serializers import *
@@ -19,17 +21,48 @@ class PostList(generics.ListCreateAPIView):
         filter_value = self.kwargs.get("filter")
         if filter_value:
             if filter_value == "last":
-                return Post.objects.order_by("id")[:1]
+                return Post.objects.all()[:1]
         else:
             return Post.objects.all()
 
 
+class EditedPostList(generics.ListCreateAPIView):
+    serializer_class = EditedPostSerializer
+
+    def get_queryset(self, *args, **kwargs):
+        post_id = self.kwargs.get("post_id")
+        if post_id:
+            post = Post.objects.get(pk=post_id)
+            return EditedPost.objects.filter(origin=post).order_by("-id")[:1]
+        else:
+            return EditedPost.objects.all().order_by("-id")
+
+
+class LikeList(generics.ListCreateAPIView):
+    serializer_class = LikeSerializer
+
+    def get_queryset(self, *args, **kwargs):
+        post_id = self.kwargs.get("post_id")
+        user_id = self.kwargs.get("user_id")
+        filter_value = self.kwargs.get("filter")
+        if filter_value == "check":
+            user = User.objects.get(pk=user_id)
+            post = Post.objects.get(pk=post_id)
+            return Like.objects.filter(liker=user, post=post)
+        elif post_id:
+            post = Post.objects.get(pk=post_id)
+            return Like.objects.filter(post=post)
+        else:
+            return Like.objects.all()
+
+
+class LikeDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+
+
 def index(request):
     return render(request, "network/index.html")
-
-
-def test(request):
-    return render(request, "network/test.html")
 
 
 def login_view(request):
@@ -82,3 +115,8 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "network/register.html")
+
+
+@api_view(["GET"])
+def me(request):
+    return Response({"id": request.user.id, "username": request.user.username})
