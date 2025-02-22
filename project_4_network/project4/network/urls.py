@@ -21,5 +21,7 @@ urlpatterns = [
     path("likes/post=<int:post_id>/", views.LikeList.as_view()),
     path("likes/filter=<str:filter>/user=<user_id>/post=<int:post_id>/", views.LikeList.as_view()),
     path("likes/<int:pk>/", views.LikeDetail.as_view()),
+    path("comments/", views.CommentList.as_view()),
+    path("comments/<int:post_id>/", views.CommentList.as_view()),
     path("me/", views.me),
 ]

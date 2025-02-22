@@ -90,6 +90,18 @@ class LikeDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = LikeSerializer
 
 
+class CommentList(generics.ListCreateAPIView):
+    serializer_class = CommentSerializer
+
+    def get_queryset(self, *args, **kwargs):
+        filter_value = self.kwargs.get("post_id")
+        if filter_value:
+            post = Post.objects.get(pk=filter_value)
+            return Comment.objects.filter(post=post)
+        else:
+            return Comment.objects.all().order_by("-created_at")
+
+
 def index(request):
     return render(request, "network/index.html")
 

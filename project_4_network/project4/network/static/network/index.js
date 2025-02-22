@@ -25,24 +25,36 @@ function App() {
 			setPosts(data.results);
 			setIsLastPage(data.count / pageNumber <= 10);
 		}
-		if (!showProfile) {
-			update();
-		} else {
-			updateProfile();
+
+		async function updateFollowingPosts() {
+			const data = await getFollowingPosts(pageNumber);
+			if (arePostsEqual(posts, data.results)) return;
+			setPosts(data.results);
+			setIsLastPage(data.count / pageNumber <= 10);
 		}
 
-	}, [pageNumber, posts, profileId]);
+		if (!showProfile && !isShowFollowing) {
+			update();
+		} else if (showProfile && !isShowFollowing) {
+			updateProfile();
+		} else if (!showProfile && isShowFollowing) {
+			updateFollowingPosts();
+		}
+
+	}, [pageNumber, posts, profileId, showProfile, isShowFollowing]);
 
 	return (
 		<div className="container">
 			<TitleBar 
 				title={title} 
+				setTitle={setTitle}
 				notifications={notifications} 
 				setShowProfile={setShowProfile}
 				showProfile={showProfile}
 				profileId={profileId}
 				setPosts={setPosts}
 				setIsShowFollowing={setIsShowFollowing}
+				setPageNumber={setPageNumber}
 			/>
 			<NewPost 
 				posts={posts} 
@@ -51,6 +63,7 @@ function App() {
 				setIsEditing={setIsEditing} 
 				postId={postId}
 				showProfile={showProfile}
+				isShowFollowing={isShowFollowing}
 			/>
 			<ViewPosts 
 				posts={posts} 
@@ -84,6 +97,13 @@ async function getPosts(pageNumber) {
 
 async function getUserPosts(pageNumber, profileId) {
 	const response = await fetch(`/posts/profile/${profileId}/`);
+	const data = await response.json();
+	return data;
+}
+
+async function getFollowingPosts(pageNumber) {
+	const userId = await getMe();
+	const response = await fetch(`/posts/filter=following/${userId}/?p=${pageNumber}`);
 	const data = await response.json();
 	return data;
 }
@@ -186,7 +206,7 @@ function ShowTitle({ title, showProfile, profileId }) {
 	)
 }
 
-function Following({setPosts, setIsShowFollowing, setShowProfile}) {
+function Following({setPosts, setIsShowFollowing, setShowProfile, setPageNumber, setTitle}) {
 	React.useEffect(() => {
 		async function update() {
 			
@@ -195,9 +215,9 @@ function Following({setPosts, setIsShowFollowing, setShowProfile}) {
 
 	async function showFollowingPosts() {
 		setIsShowFollowing(true);
-		const userId = await getMe();
-		const response = await fetch(`/posts/filter=following/${userId}/`);
-		const data = await reponse.json();
+		setShowProfile(false);
+		setPageNumber(1);
+		setTitle("Following Posts")
 	}
 
 	return (
@@ -222,13 +242,14 @@ function Notification({notifications}) {
 	)
 }
 
-function TitleBar({ title, notifications, showProfile, profileId, setPosts, setIsShowFollowing }) {
+function TitleBar({ title, setTitle, notifications, showProfile, setShowProfile, profileId, setPosts, setIsShowFollowing, setPageNumber }) {
 	return (
 		<div>
 			<div className="d-flex flex-row justify-content-between">
 				<div className="flex-item">
 					<ShowTitle 
 						title={title} 
+						setTitle={setTitle}
 						showProfile={showProfile} 
 						profileId={profileId} 
 					/>
@@ -239,7 +260,13 @@ function TitleBar({ title, notifications, showProfile, profileId, setPosts, setI
 							<Notification notifications={notifications} />
 						</div>
 						<div className="ms-3">
-							<Following setPosts={setPosts} setIsShowFollowing={setIsShowFollowing} />
+							<Following 
+								setPosts={setPosts} 
+								setIsShowFollowing={setIsShowFollowing} 
+								setShowProfile={setShowProfile} 
+								setPageNumber={setPageNumber}
+								setTitle={setTitle}
+							/>
 						</div>
 					</div>
 				</div>
@@ -249,7 +276,7 @@ function TitleBar({ title, notifications, showProfile, profileId, setPosts, setI
 	)
 }
 
-function NewPost({posts, setPosts, isEditing, setIsEditing, postId, showProfile}) {
+function NewPost({posts, setPosts, isEditing, setIsEditing, postId, showProfile, isShowFollowing}) {
 	async function handleFormSubmit(event) {
 		event.preventDefault();
 		console.log("Form is submited!");
@@ -304,7 +331,7 @@ function NewPost({posts, setPosts, isEditing, setIsEditing, postId, showProfile}
 		setIsEditing(false);
 	}
 
-	return (!showProfile ? (
+	return (!showProfile && !isShowFollowing ? (
 		<div>
 			<div className="container-fluid card p-3 m-2">
 				<form className="form-group" onSubmit={handleFormSubmit}>
@@ -331,6 +358,7 @@ function ViewPost({ post, setIsEditing, setPostId, setShowProfile, setProfileId,
 	const [isUpdated, setIsUpdated] = React.useState(false);
 	const [lastContent, setLastContent] = React.useState(post.content);
 	const [lastUpdateTime, setLastUpdateTime] = React.useState(post.created_at);
+	const [showComment, setShowComment] = React.useState(false);
 
 	React.useState(() => {
 		async function updateButton() {
@@ -414,6 +442,7 @@ function ViewPost({ post, setIsEditing, setPostId, setShowProfile, setProfileId,
 
 	function handleCommentClick() {
 		console.log("Click on comment button for post: ", post.id);
+
 	}
 
 	function handleEditClick(event) {
@@ -490,7 +519,7 @@ function ViewPosts({ posts, setIsEditing, setPostId, setShowProfile, setProfileI
 }
 
 function LoadPageButton({ pageNumber, setPageNumber, posts, isLastPage }) {
-	const headSection = document.querySelector("#content");
+	const headSection = document.querySelector("#title");
 
 	function prevPage() {
 		setPageNumber(pageNumber - 1);
