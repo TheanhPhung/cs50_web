@@ -46,6 +46,11 @@ class PostList(generics.ListCreateAPIView):
                 user_id = self.kwargs.get("user_id")
                 user = User.objects.get(pk=user_id)
                 return Post.objects.filter(owner=user)
+            elif filter_value == "following":
+                user_id = self.kwargs.get("user_id")
+                user = User.objects.get(pk=user_id)
+                following_ids = user.follow.values_list("id", flat=True)
+                return Post.objects.filter(owner__in=following_ids)
         else:
             return Post.objects.all()
 

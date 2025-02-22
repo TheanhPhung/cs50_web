@@ -6,8 +6,10 @@ function App() {
 	const [notifications, setNotifications] = React.useState(1);
 	const [isEditing, setIsEditing] = React.useState(false);
 	const [postId, setPostId] = React.useState(0);
-	const [showProfile, setShowProfile] = React.useState(false);
 	const [profileId, setProfileId] = React.useState(null);
+
+	const [showProfile, setShowProfile] = React.useState(false);
+	const [isShowFollowing, setIsShowFollowing] = React.useState(false);
 
 	React.useEffect(() => {
 		async function update() {
@@ -36,8 +38,11 @@ function App() {
 			<TitleBar 
 				title={title} 
 				notifications={notifications} 
+				setShowProfile={setShowProfile}
 				showProfile={showProfile}
 				profileId={profileId}
+				setPosts={setPosts}
+				setIsShowFollowing={setIsShowFollowing}
 			/>
 			<NewPost 
 				posts={posts} 
@@ -97,16 +102,28 @@ async function getProfile(profileId) {
 
 function ShowTitle({ title, showProfile, profileId }) {
 	const [followerCount, setFollowerCount] = React.useState(0);
+	const [followingCount, setFollowingCount] = React.useState(0);
 	const [isFollowed, setIsFollowed] = React.useState(false);
 	const [buttonName, setButtonName] = React.useState("Follow");
+	const [buttonClassName, setButtonClassName] = React.useState("btn btn-primary m-3")
+	const [isOwnProfile, setIsOwnProfile] = React.useState(true);
 
-	React.useState(() => {
+	React.useEffect(() => {
 		async function updateTitle() {
 			if (!showProfile) return;
+
 			const myId = await getMe();
 			const user = await getProfile(myId);
 			const profile = await getProfile(profileId);
 			setFollowerCount(profile.follower_count);
+			setFollowingCount(profile.follow.length);
+	
+			if (myId === profile.id) {
+				setIsOwnProfile(true);
+				return;
+			}
+
+			setIsOwnProfile(false);
 			const checkIsFollowed = user.follow.includes(profileId);
 			setIsFollowed(checkIsFollowed);
 			if (checkIsFollowed) {
@@ -115,31 +132,77 @@ function ShowTitle({ title, showProfile, profileId }) {
 		}
 		updateTitle();
 		console.log(followerCount);
-	}, [profileId]);
+	}, [profileId, showProfile]);
 
-	function handleFollowClick() {
+	async function handleFollowClick() {
+		const user = await getMe();
+		const response = await fetch(`/users/${user}/`);
+		const data = await response.json();
+
+		let follow_list = [];
 		if (!isFollowed) {
 			setFollowerCount(followerCount + 1);
 			setButtonName("Unfollow");
 			setIsFollowed(true);
+			setButtonClassName("btn btn-light m-3");
+
+			follow_list = [...data.follow, profileId];
 		} else {
 			setFollowerCount(followerCount - 1);
 			setButtonName("Follow");
 			setIsFollowed(false);
+			setButtonClassName("btn btn-primary m-3");
+
+			follow_list = data.follow.filter(following => following !== user);
 		}
+		fetch(`/users/${user}/`, {
+			method: "PUT",
+			headers: {
+				"Content-Type": "application/json",
+				"X-CSRFToken": document.cookie.split("=")[1]
+			},
+			body: JSON.stringify ({
+				"username": data.username,
+				"follow": follow_list
+			})
+		})
 	}
 
 	return (
 		<div id="title">
-			<span className="badge bg-dark text-light m-3 p-3">
+			<span className="badge bg-light text-dark m-3 p-3">
 				<h4 className="mt-2">{title}</h4>
-				<div className="d-flex flex-row justify-content-end">
-					{showProfile ? (<span style={{ fontSize: "14px" }}>({followerCount} {followerCount <= 1 ? "follower" : "followers"})</span>) : null}
+				<div className="d-flex flex-row justify-content-end p-1">
+					{showProfile ? (<span style={{ fontSize: "14px" }}>(Follower: {followerCount})</span>) : null}
+				</div>
+				<div className="d-flex flex-row justify-content-end p-1">
+					{showProfile ? (<span style={{ fontSize: "14px" }}>(Following: {followingCount})</span>) : null}
 				</div>
 			</span>
-			{showProfile ? (
-				<button className="btn btn-light m-3" onClick={handleFollowClick}>{buttonName} <i className="fa fa-plus"></i></button>
+			{showProfile && !isOwnProfile ? (
+				<button className={buttonClassName} onClick={handleFollowClick}>{buttonName} <i className="fa fa-plus"></i></button>
 			) : null}
+		</div>
+	)
+}
+
+function Following({setPosts, setIsShowFollowing, setShowProfile}) {
+	React.useEffect(() => {
+		async function update() {
+			
+		}
+	}, []); 
+
+	async function showFollowingPosts() {
+		setIsShowFollowing(true);
+		const userId = await getMe();
+		const response = await fetch(`/posts/filter=following/${userId}/`);
+		const data = await reponse.json();
+	}
+
+	return (
+		<div>
+			<button className="btn btn-dark" onClick={showFollowingPosts}>Following</button>
 		</div>
 	)
 }
@@ -159,7 +222,7 @@ function Notification({notifications}) {
 	)
 }
 
-function TitleBar({ title, notifications, showProfile, profileId }) {
+function TitleBar({ title, notifications, showProfile, profileId, setPosts, setIsShowFollowing }) {
 	return (
 		<div>
 			<div className="d-flex flex-row justify-content-between">
@@ -171,7 +234,14 @@ function TitleBar({ title, notifications, showProfile, profileId }) {
 					/>
 				</div>
 				<div className="flex-item">
-					<Notification notifications={notifications} />
+					<div>
+						<div>
+							<Notification notifications={notifications} />
+						</div>
+						<div className="ms-3">
+							<Following setPosts={setPosts} setIsShowFollowing={setIsShowFollowing} />
+						</div>
+					</div>
 				</div>
 			</div>
 			<hr />
